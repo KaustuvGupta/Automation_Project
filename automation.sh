@@ -1,7 +1,7 @@
 #!/bin/bash
 #Author			: Kaustuv Gupta
 #Creation Date  	: 27/05/2023
-#Version		: Automation-v0.1
+#Version		: Automation-v0.2
 #Change Variable 	: s3_bucket,myname in the VARABLE DECLARATION section
 #--------------------------------------------------------------------------------------------------------------
 #############################				 VARABLE DECLARATION		   		  #############################
@@ -13,10 +13,16 @@ myname="######"
 
 timestamp=$(date '+%d%m%Y-%H%M%S')
 tarfilename=${myname}-httpd-logs-${timestamp}.tar
+inv_filename="/var/www/html/inventory.html"
+cron_filename="/etc/cron.d/automation"
+cron_job_schedule="5 10 * * * root bash /root/Automation_Project/automation.sh"
 
 echo ">>Bucket Name: ${s3_bucket}"
 echo ">>My Name: ${myname}"
 echo ">>TimeStamp: ${timestamp}"
+echo ">>Html file path: ${inv_filename}"
+echo ">>Cronjob file path: ${cron_filename}"
+echo ">>Cronjob schedule: ${cron_job_schedule}"
 
 c_check_apache="E"
 c_check_apacheup="E"
@@ -24,7 +30,6 @@ c_check_apache_enable="E"
 c_check_tar_file="E"
 c_check_awscli="E"
 c_check_s3upload="E"
-
 #--------------------------------------------------------------------------------------------------------------
 
 #############################				 PACKAGE INSTALLATION  		   		  #############################
@@ -167,5 +172,97 @@ else
     echo ">>Unable to upload the '${tarfilename}' file due to missing upload file or AWS CLI not installed properly."
     c_check_s3upload="E"
 fi
+
+#--------------------------------------------------------------------------------------------------------------
+
+#############################			Logging Archiving Information	   		  ##########################
+
+echo "Logging Archiving Information  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+if [ ${c_check_tar_file} = "S" ] && [ ${c_check_s3upload} = "S" ]; then
+    header="<h3>Log Type &emsp;&emsp;&emsp; Date Created &emsp;&emsp;&emsp; Type &emsp;&emsp;&emsp; Size</h3> "
+    tarfilesize=$(aws s3 ls s3://${s3_bucket} --human-readable|grep -w "${tarfilename}"|awk '{print $3 $4}')
+    content="<p>httpd-logs &emsp;&emsp;&emsp;&emsp; ${timestamp} &emsp;&emsp;&emsp;&emsp; tar &emsp;&emsp;&emsp;&emsp; ${tarfilesize} </p>"
+        
+    if [ -e $inv_filename ]
+    then
+        echo ">>Adding archive details to inventory.html file..."
+        
+        echo $content >> $inv_filename
+        if grep -Fxq "${content}" $inv_filename
+        then
+            echo ">>Archive log inserted successfully."
+        else
+            echo ">>Archive log insertion unsuccessful."
+        fi
+    else
+        echo ">>Inventory.html file does not exists. Creating the file..."
+        
+        echo $header > $inv_filename
+        echo $content >> $inv_filename
+        
+
+        if [ ! -f $inv_filename ]; then
+            echo ">>'$inv_filename' file creation failed."
+        else
+            echo ">>'$inv_filename' file created successfully."
+            if grep -Fxq "${content}" $inv_filename
+            then
+                echo ">>Archive log inserted successfully."
+            else
+                echo ">>Archive log insertion unsuccessful."
+            fi
+        fi
+    fi
+else
+    echo ">>Logging archiving information in 'inventory.html' file failed."
+fi
+#--------------------------------------------------------------------------------------------------------------
+
+
+#############################			Create a Cron job	   		  ##########################
+
+
+echo "Scheduling Task  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+
+if [ ! -f $cron_filename ]
+then
+    echo ">>Creating a Cron Job..."
+    echo ">> ${cron_job_schedule}"
+    echo "${cron_job_schedule}" >> $cron_filename
+    
+    if [ ! -f $cron_filename ]
+    then
+        echo ">>Failed to create Cronjob file and schedule the task"
+    else
+        echo ">>'$cron_filename' file created successfully."
+        #verifying scheduling
+        if grep -Fxq "${cron_job_schedule}" $cron_filename
+        then
+            echo ">>Scheduled successfully."
+        else
+            echo ">>Scheduling failed."
+        fi
+    fi
+else
+    echo ">>Cronjob file automation exists..."
+    echo ">>Checking Existing Cronjob Schedule for the following..."
+    echo ">> ${cron_job_schedule}"
+    
+    if grep -Fxq "${cron_job_schedule}" $cron_filename
+    then
+        echo ">>Already Scheduled."
+    else
+        echo "${cron_job_schedule}" >> $cron_filename
+        #verifying scheduling
+        if grep -Fxq "${cron_job_schedule}" $cron_filename
+        then
+            echo ">>Scheduled successfully."
+        else
+            echo ">>Scheduling failed."
+        fi
+    fi
+    
+fi
+
 
 #############################			END	   		  ##########################

@@ -1,8 +1,9 @@
 # Problem Description
 The following infrastructure is created to install Apache2 web server in EC2 machine and run and enable it. Install aws cli if not installed and achive the log files in .tar format backup the file into the AWS S3 bucket.
+Automate the whole archival and backup process by creating a cron job which runs the script everyday at '10:05:00' by creating a file 'automation'. In addition to that we also need to create a webpage 'inventory.html' file to track the archive logs from frontend.
 
-## Version: Automation-v0.1
-Pull request from tag Automation-v0.1.
+## Version: Automation-v0.2
+Pull request from tag Automation-v0.2.
 
 ## Prerequisites:
 - IAM Role >> Full access to S3 bucket
@@ -38,7 +39,7 @@ Pull request from tag Automation-v0.1.
 
 #clone Repository
 - git clone https://github.com/KaustuvGupta/Automation_Project.git
-			
+
 #move into the Repository
 - cd Automation_Project
 
@@ -46,15 +47,7 @@ Pull request from tag Automation-v0.1.
 
 - update the bucket parameter s3_bucket and myname as mentioned in the above notes
 
-#Checkout Tag Automation-v0.1  in new branch 'grader'
-- git checkout Automation-v0.1 -b grader
+#Check Tag Automation-v0.2
+- git checkout main
 
-#make script executable
-
-- chmod +x automation.sh
-- ./automation.sh
-
-#for more verbose  output
-  
 - bash -x ./automation.sh
-
